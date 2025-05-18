@@ -3,6 +3,9 @@ package com.example.demo.t.controller;
 import java.util.Collections;
 import java.util.Scanner;
 
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+
 import com.example.demo.t.logic.CommonLogic;
 import com.example.demo.t.model.User;
 
@@ -24,7 +27,10 @@ import com.example.demo.t.model.User;
 //
 //ダブルダウンやスプリットなどの特殊ルールは無し。
 
+@Controller
 public class BlackJackController {
+	
+	@GetMapping("/nbj")
 	public static void startApplication() {
 		System.out.println("ブラックジャックを開始します。");
 		boonApplication();
@@ -112,7 +118,7 @@ public class BlackJackController {
 				// ディーラーの手札合計算出
 				dealerTotal = logic.listTotal(user.getDealer());
 				// デバック用
-//				System.out.println("ディーラーの手札合計値：" + dealerTotal);
+				// System.out.println("ディーラーの手札合計値：" + dealerTotal);
 
 				// 21バースト確認
 				Boolean result = logic.cardBurst(dealerTotal);

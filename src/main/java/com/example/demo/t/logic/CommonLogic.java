@@ -15,7 +15,7 @@ public class CommonLogic {
 		case 1:
 			return "♦";
 		case 2:
-			return "♡";
+			return "♥";
 		case 3:
 			return "♠";
 		default:
