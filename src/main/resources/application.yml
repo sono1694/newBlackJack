@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: newBlackJack
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/testdb
+    username: user01
+    password: pass01
+    driver-class-name: org.postgresql.Driver
+
+  mybatis:
+    configuration:
+      map-underscore-to-camel-case: true

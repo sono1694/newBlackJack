@@ -1,0 +1,146 @@
+package com.example.demo.t.controller;
+
+import java.util.Collections;
+import java.util.Scanner;
+
+import com.example.demo.t.logic.CommonLogic;
+import com.example.demo.t.model.User;
+
+//カード枚数は52枚。ジョーカーは含めない。カードの重複が無いように山札を構築する。
+//プレイヤー、ディーラーの一対一で対戦するものとし、以下の挙動を取る
+//初期設定として、プレイヤー・ディーラーが交互に1枚ずつ山札からカードを取り手札とする。
+//プレイヤーからは自分の手札すべてと、ディーラーの1枚めの手札が確認できる。（ディーラーの2枚目移行の手札はわからない）
+//
+//手札はAが1ポイント、2-10がそれぞれ2-10ポイント、J/Q/Kが10ポイントとして計算される。
+//
+//プレイヤーは手札を1枚追加するか、しないかを選択できる。
+//手札を追加した場合、21ポイントを超えるとバーストとなり、ゲームに敗北する。
+//プレイヤーはバーストするか、好きなタイミングで止めるまで手札にカードを追加できる。
+//ディーラーは手札の合計ポイントが17以上になるまで山札を引き続ける。
+//ディーラーの手札が21ポイントを超えた場合、バーストしてプレイヤーの勝利。
+//ディーラーの手札が18以上21以下になったとき次の段階に移行する。
+//
+//プレイヤー・ディーラーの手札のポイントを比較して、大きいほうが勝利。
+//
+//ダブルダウンやスプリットなどの特殊ルールは無し。
+
+public class BlackJackController {
+	public static void startApplication() {
+		System.out.println("ブラックジャックを開始します。");
+		boonApplication();
+		
+		System.out.println();
+		System.out.println("ブラックジャックを終了します。");
+	}
+	
+	@SuppressWarnings("resource")
+	public static void boonApplication() {
+		// インスタンス生成
+		User user = new User();
+		CommonLogic logic = new CommonLogic();
+		int i = 0;
+
+		// プレイヤーの合計算出用変数を宣言
+		int playerTotal = 0;
+		// ディーラーの合計算出用変数を宣言
+		int dealerTotal = 0;
+
+		// 山札作成
+		for (i = 0; i < user.getList().size(); i++) {
+			user.getList().set(i, i);
+		}
+
+		// 山札をシャッフル
+		Collections.shuffle(user.getList());
+
+		// プレイヤーとディーラーが1回目の山札から引くフェーズ
+		user.getPlayer().add(user.getList().get(0));
+		user.getDealer().add(user.getList().get(1));
+		System.out.println("プレイヤーの手札：" + logic.cardConverter(user.getPlayer().get(0))
+				+ logic.converterAJQK(logic.cardNumberConverter(user.getPlayer().get(0))));
+		System.out.println("ディーラーの手札：" + logic.cardConverter(user.getDealer().get(0))
+				+ logic.converterAJQK(logic.cardNumberConverter(user.getDealer().get(0))));
+
+		// 山札の引いた回数保有
+		int draw = 2;
+
+		// プレイヤーのドローフェーズ
+		for (i = 0; i < user.getList().size(); i++) {
+			System.out.println("カードをドローしますか？（「y」or「n」を入力してください）");
+			Scanner scan = new Scanner(System.in);
+			String str = scan.next();
+
+			if (str.equals("y")) {
+				/** 手札に加える前にカードを表示<br>
+				 *   手札に加えた後だと柄が固定されてしまうため
+				 */
+				System.out.println("ドローしたカード：" + logic.cardConverter(user.getList().get(i + draw))
+						+ logic.converterAJQK(logic.cardNumberConverter(user.getList().get(i + draw))));
+
+				// プレイヤーのリストに山札から1枚追加
+				user.getPlayer().add(logic.cardNumberConverter(user.getList().get(i + draw)));
+				draw = draw + i;
+
+				// プレイヤーの手札合計算出
+				playerTotal = logic.listTotal(user.getPlayer());
+				System.out.println("プレイヤーの手札合計値：" + playerTotal);
+
+				// 21バースト確認
+				Boolean result = logic.cardBurst(playerTotal);
+				if (result) {
+					System.out.println("プレイヤーの手札がバーストしました。");
+					System.out.println("ディーラーの勝利です。");
+					return;
+				}
+
+			} else if (str.equals("n")) {
+				// ループから抜ける。
+				break;
+			} else {
+				System.out.println("想定外の入力がされました。もう一度入力してください");
+				i--;
+			}
+		}
+
+		// プレイヤーのドローフェーズ
+		for (i = 0; i < user.getList().size() - draw; i++) {
+			if (dealerTotal <= 17) {
+				// ディーラーのリストに山札から1枚追加
+				user.getDealer().add(logic.cardNumberConverter(user.getList().get(i + draw)));
+				draw = draw + i;
+
+				// ディーラーの手札合計算出
+				dealerTotal = logic.listTotal(user.getDealer());
+				// デバック用
+//				System.out.println("ディーラーの手札合計値：" + dealerTotal);
+
+				// 21バースト確認
+				Boolean result = logic.cardBurst(dealerTotal);
+				if (result) {
+					System.out.println("ディーラーの手札合計値：" + dealerTotal);
+					System.out.println("ディーラーの手札がバーストしました。");
+					System.out.println("プレイヤーの勝利です。");
+					return;
+				}
+			}
+		}
+		resultContrast(playerTotal, dealerTotal);
+		return;
+	}
+
+	// プレイヤーとディーラーの手札比較
+	private static void resultContrast(int playerTotal, int dealerTotal) {
+		System.out.println();
+		System.out.println("プレイヤーの手札合計値：" + playerTotal);
+		System.out.println("ディーラーの手札合計値：" + dealerTotal);
+		System.out.println();
+
+		if (playerTotal > dealerTotal) {
+			System.out.println("プレイヤーの勝利です。");
+		} else if (playerTotal < dealerTotal) {
+			System.out.println("ディーラーの勝利です。");
+		} else {
+			System.out.println("引き分けです。");
+		}
+	}
+}
